@@ -1,18 +1,9 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "window.hpp"
 
-#include <iostream>
 #include <optional>
-#include <set>
 #include <vector>
-#include <cstdint>
-#include <algorithm>
-
-const std::vector<const char*> device_extensions = {
-	VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
 
 /// <summary>
 /// Holds the indices of the queue families required for rendering
@@ -25,7 +16,7 @@ struct QueueFamilyIndices {
 	/// Determines whether all needed families are present
 	/// </summary>
 	/// <returns>Indication if an index exists for each member family</returns>
-	bool isComplete();
+	bool isComplete() { return graphics_family.has_value() && present_family.has_value(); }
 };
 
 /// <summary>
@@ -38,10 +29,51 @@ struct SwapChainSupportDetails {
 };
 
 /// <summary>
-/// Utility class containing static methods for managing and extracting data about physical and logical devices
+/// Class for managing device resources and functionality
 /// </summary>
-class DeviceUtils {
+class Device {
 public:
+	VkPhysicalDeviceProperties physical_device_properties;
+
+	Device(Window& window);
+	~Device();
+
+	VkDevice getDevice() { return device_; }
+	VkSurfaceKHR getSurface() { return surface_; }
+	VkQueue getGraphicsQueue() { return graphics_queue_; }
+	VkQueue getPresentQueue() { return present_queue_; }
+
+	SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physical_device); }
+	QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physical_device); }
+private:
+#ifdef NDEBUG
+	const bool enable_validation_layers = false;
+#else
+	const bool enable_validation_layers = true;
+#endif
+	const std::vector<const char*> device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	const std::vector<const char*> validation_layers = { "VK_LAYER_KHRONOS_validation" };
+
+	VkInstance instance;
+	VkDebugUtilsMessengerEXT debug_messenger;
+	VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+	Window& window;
+
+	VkDevice device_;
+	VkSurfaceKHR surface_;
+	VkQueue graphics_queue_;
+	VkQueue present_queue_;
+
+	void createInstance();
+	void setupDebugMessenger();
+	void createSurface();
+	void pickPhysicalDevice();
+	void createLogicalDevice();
+
+	bool checkValidationLayerSupport();
+
+	std::vector<const char*> getRequiredExtensions();
+
 	/// <summary>
 	/// Fetches a suitable device according to certain requirements.
 	/// See <c>isDeviceSuitable</c>
@@ -50,41 +82,21 @@ public:
 	/// <param name="device_count">Number of devices in the given array</param>
 	/// <param name="surface">Surface to be rendered to</param>
 	/// <returns>Handle for a device that satisfies the established requirements</returns>
-	static VkPhysicalDevice findSuitableDevice(VkPhysicalDevice* devices, size_t device_count, VkSurfaceKHR& surface);
+	VkPhysicalDevice findSuitableDevice(VkPhysicalDevice* devices, size_t device_count);
 	/// <summary>
 	/// Fetches indices of queue families according to definition of QueueFamilyIndices
 	/// </summary>
 	/// <param name="device">Device to fetch queues from</param>
 	/// <param name="surface">Surface to be rendered to</param>
 	/// <returns>Struct containing (potentially present) indices of queues</returns>
-	static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface);
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 	/// <summary>
 	/// Queries for exact capabilities of swap chain support
 	/// </summary>
 	/// <param name="device">Device to check capabilities of</param>
 	/// <param name="surface">Surface to be rendered to</param>
 	/// <returns>Struct containing details of swap chain support as indicated by the definition of SwapChainSupportDetails</returns>
-	static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR& surface);
-	/// <summary>
-	/// Choose a suitable swap format (currently attempts to select 32bpc sRGB) 
-	/// </summary>
-	/// <param name="available_swap_formats">Swap formats supported by device-surface combination</param>
-	/// <returns>A swap format to use for swap chain construction</returns>
-	static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& available_swap_formats);
-	/// <summary>
-	/// Choose a suitable swap present mode (currently attempts to select mailbox/triple buffering)
-	/// </summary>
-	/// <param name="available_present_modes">Present modes supported by device-surface combination</param>
-	/// <returns>A present mode to use for swap chain construction</returns>
-	static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& available_present_modes);
-	/// <summary>
-	/// Define the dimensions of the images contained in the swap chain
-	/// </summary>
-	/// <param name="window">Window housing the surface to be rendered to</param>
-	/// <param name="capabilities">Surface capabilities of the device-surface combination</param>
-	/// <returns>An extent defining the window surface (within bounds of capabilities) for swap chain construction</returns>
-	static VkExtent2D chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities);
-private:
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	/// <summary>
 	/// Checks that the given device-surface combo meets the following criteria:
 	/// (
@@ -96,11 +108,11 @@ private:
 	/// <param name="device">Device to evaluate suitability of</param>
 	/// <param name="surface">Surface to be rendered to use for fetching properties</param>
 	/// <returns>Indication if device is suitable for rendering to the surface</returns>
-	static bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface);
+	bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface);
 	/// <summary>
 	/// Check that the given device supported the extensions contained in <c>device_extensions</c>
 	/// </summary>
 	/// <param name="device">Device to check extension support for</param>
 	/// <returns>Indication if device supports these extensions</returns>
-	static bool checkDeviceExtensionSupport(VkPhysicalDevice device);
+	bool checkDeviceExtensionSupport(VkPhysicalDevice device);
 };

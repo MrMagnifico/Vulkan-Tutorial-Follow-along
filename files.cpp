@@ -15,7 +15,7 @@ FileUtils::readFile(const std::string& filename) {
 }
 
 VkShaderModule
-ShaderUtils::createShaderModule(VkDevice& device, const std::vector<char>& code) {
+ShaderUtils::createShaderModule(const VkDevice& device, const std::vector<char>& code) {
 	VkShaderModuleCreateInfo create_info{};
 	create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	create_info.codeSize = code.size();

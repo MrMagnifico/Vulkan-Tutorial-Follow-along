@@ -1,20 +1,186 @@
+#include "debug.hpp"
 #include "device.hpp"
 
+#include <algorithm>
+#include <set>
+#include <stdexcept>
+
+Device::Device(Window& window) : window{ window } {
+	createInstance();
+	setupDebugMessenger();
+	createSurface();
+	pickPhysicalDevice();
+	createLogicalDevice();
+}
+
+Device::~Device() {
+	vkDestroyDevice(device_, nullptr);
+	vkDestroySurfaceKHR(instance, surface_, nullptr);
+	if (enable_validation_layers) DebugUtils::destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
+	vkDestroyInstance(instance, nullptr);
+}
+
+void
+Device::createInstance() {
+	if (enable_validation_layers && !checkValidationLayerSupport()) {
+		throw std::runtime_error("Validation layer support needed but not found");
+	}
+
+	VkApplicationInfo app_info{};
+	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	app_info.pApplicationName = "Toy Application";
+	app_info.applicationVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+	app_info.pEngineName = "Monke Engine 9000";
+	app_info.engineVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
+	app_info.apiVersion = VK_API_VERSION_1_2;
+
+	VkInstanceCreateInfo create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	create_info.pApplicationInfo = &app_info;
+
+	// Get needed extension data
+	auto extensions = getRequiredExtensions();
+	create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+	create_info.ppEnabledExtensionNames = extensions.data();
+
+	// Validation layers info
+	VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
+	if (enable_validation_layers) {
+		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+		create_info.ppEnabledLayerNames = validation_layers.data();
+
+		// Create messenger for instance creation and destruction debugging
+		DebugUtils::populateDebugMessengerCreateInfo(debug_create_info);
+		create_info.pNext = &debug_create_info;
+	}
+	else { create_info.enabledLayerCount = 0; }
+
+	if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create Vulkan instance");
+	}
+}
+
+void
+Device::setupDebugMessenger() {
+	if (!enable_validation_layers) return;
+
+	VkDebugUtilsMessengerCreateInfoEXT create_info{};
+	DebugUtils::populateDebugMessengerCreateInfo(create_info);
+
+	if (DebugUtils::createDebugUtilsMessengerEXT(
+		instance,
+		&create_info,
+		nullptr,
+		&debug_messenger) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to set up debug messenger");
+	}
+}
+
+void
+Device::createSurface() { window.createWindowSurface(instance, &surface_); }
+
+void
+Device::pickPhysicalDevice() {
+	uint32_t device_count = 0;
+	vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+	if (device_count == 0) throw std::runtime_error("Failed to find GPUs with Vulkan support");
+
+	std::vector<VkPhysicalDevice> devices(device_count);
+	vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+
+	physical_device = findSuitableDevice(devices.data(), devices.size());
+	if (physical_device == VK_NULL_HANDLE) throw std::runtime_error("Failed to find a suitable GPU");
+}
+
+void 
+Device::createLogicalDevice() {
+	QueueFamilyIndices indices = findQueueFamilies(physical_device);
+	float queue_priority = 1.0f;
+
+	// Create one queue per queue family type
+	std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+	std::set<uint32_t> unique_family_indices = { indices.graphics_family.value(), indices.present_family.value() };
+	for (uint32_t family_index : unique_family_indices) {
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queueCreateInfo.queueFamilyIndex = family_index;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queue_priority;
+		queue_create_infos.push_back(queueCreateInfo);
+	}
+
+	// No particular device features are needed
+	VkPhysicalDeviceFeatures device_features{};
+
+	// Specify properties for logical device creation
+	VkDeviceCreateInfo create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	create_info.pQueueCreateInfos = queue_create_infos.data();
+	create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
+	create_info.pEnabledFeatures = &device_features;
+	create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+	create_info.ppEnabledExtensionNames = device_extensions.data();
+	if (enable_validation_layers) {
+		create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+		create_info.ppEnabledLayerNames = validation_layers.data();
+	}
+	else { create_info.enabledLayerCount = 0; }
+
+	if (vkCreateDevice(physical_device, &create_info, nullptr, &device_) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create logical device");
+	}
+
+	// Populate handles for the graphics and present queues
+	vkGetDeviceQueue(device_, indices.graphics_family.value(), 0, &graphics_queue_);
+	vkGetDeviceQueue(device_, indices.present_family.value(), 0, &graphics_queue_);
+}
+
 bool
-QueueFamilyIndices::isComplete() {
-	return graphics_family.has_value() && present_family.has_value();
+Device::checkValidationLayerSupport() {
+	uint32_t layer_count;
+	vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+	std::vector<VkLayerProperties> available_layers(layer_count);
+	vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+	for (const char* needed_layer : validation_layers) {
+		bool layer_found = false;
+
+		for (const VkLayerProperties& existing_layer : available_layers) {
+			if (strcmp(needed_layer, existing_layer.layerName) == 0) {
+				layer_found = true;
+				break;
+			}
+		}
+
+		if (!layer_found) return false;
+	}
+	return true;
+}
+
+std::vector<const char*>
+Device::getRequiredExtensions() {
+	// Extensions required by GLFW
+	uint32_t glfw_extension_count = 0;
+	const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+
+	std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+
+	// Validation layers debug utils extension
+	if (enable_validation_layers) { extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME); }
+
+	return extensions;
 }
 
 VkPhysicalDevice
-DeviceUtils::findSuitableDevice(VkPhysicalDevice* devices, size_t device_count, VkSurfaceKHR& surface) {
+Device::findSuitableDevice(VkPhysicalDevice* devices, size_t device_count) {
 	for (uint32_t counter = 0; counter < device_count; counter++) {
-		if (DeviceUtils::isDeviceSuitable(devices[counter], surface)) return devices[counter];
+		if (Device::isDeviceSuitable(devices[counter], surface_)) return devices[counter];
 	}
 	return VK_NULL_HANDLE;
 }
 
 QueueFamilyIndices
-DeviceUtils::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface) {
+Device::findQueueFamilies(VkPhysicalDevice device) {
 	QueueFamilyIndices indices;
 
 	uint32_t queue_family_count = 0;
@@ -30,7 +196,7 @@ DeviceUtils::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface) {
 		if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) indices.graphics_family = i;
 
 		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface_, &presentSupport);
 		if (presentSupport) indices.present_family = i;
 
 		i++;
@@ -40,86 +206,43 @@ DeviceUtils::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR& surface) {
 }
 
 SwapChainSupportDetails
-DeviceUtils::querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR& surface) {
+Device::querySwapChainSupport(VkPhysicalDevice device) {
 	SwapChainSupportDetails details;
 
 	// Basic surface capabilities (min/max number of images in swap chain, min/max width and height of images)
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface_, &details.capabilities);
 
 	// Surface formats (pixel format, color space)
 	uint32_t format_count;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &format_count, nullptr);
 	if (format_count > 0) {
 		details.formats.resize(format_count);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, details.formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface_, &format_count, details.formats.data());
 	}
 
 	// Available presentation modes
 	uint32_t present_mode_count;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &present_mode_count, nullptr);
 	if (present_mode_count > 0) {
 		details.present_modes.resize(present_mode_count);
-		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, details.present_modes.data());
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface_, &present_mode_count, details.present_modes.data());
 	}
 
 	return details;
 }
 
-
-//TODO: Expand to HDR colour ranges?
-VkSurfaceFormatKHR
-DeviceUtils::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& available_swap_formats) {
-	for (const auto& format : available_swap_formats) {
-		if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) return format;
-	}
-
-	// Fall back on first format if 32bpc SRGB is not found
-	available_swap_formats[0];
-}
-
-VkPresentModeKHR
-DeviceUtils::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& available_present_modes) {
-	// Prefer 'triple buffering'
-	for (auto& mode : available_present_modes) {
-		if (mode == VK_PRESENT_MODE_MAILBOX_KHR) return mode;
-	}
-
-	// Fall back on 'v-sync'
-	return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-VkExtent2D
-DeviceUtils::chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities) {
-	// Vulkan manages the swap chain extent for us (https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VkSurfaceCapabilitiesKHR.html)
-	if (capabilities.currentExtent.width != UINT32_MAX) return capabilities.currentExtent;
-	// We need to manage the extent manually
-	else {
-		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
-
-		VkExtent2D actual_extent = {
-			static_cast<uint32_t>(width),
-			static_cast<uint32_t>(height)
-		};
-		actual_extent.width = std::clamp(actual_extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-		actual_extent.height = std::clamp(actual_extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-		return actual_extent;
-	}
-}
-
 bool
-DeviceUtils::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface) {
+Device::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface) {
 	// Graphics and present queue families exist
-	QueueFamilyIndices indices = DeviceUtils::findQueueFamilies(device, surface);
+	QueueFamilyIndices indices = Device::findQueueFamilies(device);
 
 	// Required device extensions exist
-	bool extensions_supported = DeviceUtils::checkDeviceExtensionSupport(device);
+	bool extensions_supported = Device::checkDeviceExtensionSupport(device);
 
 	// At least a single image format and a single presentation mode exist
 	bool swap_chain_adequate = false;
 	if (extensions_supported) {
-		SwapChainSupportDetails swap_chain_support = DeviceUtils::querySwapChainSupport(device, surface);
+		SwapChainSupportDetails swap_chain_support = Device::querySwapChainSupport(device);
 		swap_chain_adequate = !swap_chain_support.formats.empty() && !swap_chain_support.present_modes.empty();
 	}
 
@@ -127,7 +250,7 @@ DeviceUtils::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface) {
 }
 
 bool
-DeviceUtils::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+Device::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	// Acquire extensions supported by device
 	uint32_t extension_count;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);

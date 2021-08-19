@@ -155,15 +155,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="core_app.cpp" />
     <ClCompile Include="debug.cpp" />
     <ClCompile Include="device.cpp" />
     <ClCompile Include="files.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="pipeline.cpp" />
+    <ClCompile Include="swapchain.cpp" />
+    <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="core_app.hpp" />
     <ClInclude Include="debug.hpp" />
     <ClInclude Include="device.hpp" />
     <ClInclude Include="files.hpp" />
+    <ClInclude Include="pipeline.hpp" />
+    <ClInclude Include="swapchain.hpp" />
+    <ClInclude Include="window.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -31,5 +31,5 @@ public:
 	/// <param name="device">Logical device that creates the shader module</param>
 	/// <param name="code">Raw binary data describing a SPIR-V shader</param>
 	/// <returns>A Vulkan shader module wrapping the given shader code</returns>
-	static VkShaderModule createShaderModule(VkDevice& device, const std::vector<char>& code);
+	static VkShaderModule createShaderModule(const VkDevice& device, const std::vector<char>& code);
 };
