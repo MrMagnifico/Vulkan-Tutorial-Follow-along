@@ -3,8 +3,8 @@
 
 #include <stdexcept>
 
-Pipeline::Pipeline(
-	Device& device,
+GraphicsPipeline::GraphicsPipeline(
+	LogicalDevice& device,
 	const std::string& vert_file_path,
 	const std::string& frag_file_path,
 	const PipelineConfigInfo& config_info)
@@ -13,7 +13,7 @@ Pipeline::Pipeline(
 	createGraphicsPipeline(vert_file_path, frag_file_path, config_info);
 }
 
-void Pipeline::createGraphicsPipeline(
+void GraphicsPipeline::createGraphicsPipeline(
 	const std::string& vert_file_path,
 	const std::string& frag_file_path,
 	const PipelineConfigInfo& config_info) {
@@ -76,7 +76,7 @@ void Pipeline::createGraphicsPipeline(
 	pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipeline_info.basePipelineIndex = -1; // Optional
 
-	if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &pipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(device.getDevice(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &internal_pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create graphics pipeline");
 	}
 	// END OF PIPELINE CREATION
@@ -86,7 +86,7 @@ void Pipeline::createGraphicsPipeline(
 }
 
 void
-Pipeline::defaultPipelineConfigInfo(PipelineConfigInfo& config_info, uint32_t width, uint32_t height) {
+GraphicsPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& config_info, uint32_t width, uint32_t height) {
 	config_info.input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	config_info.input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Specifies that each 3 vertices describe a triangle with no reuse, see (https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions)
 	config_info.input_assembly_info.primitiveRestartEnable = VK_FALSE; // Specifies whether or not a MAX value specifices the restart of assembly, see (https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions)

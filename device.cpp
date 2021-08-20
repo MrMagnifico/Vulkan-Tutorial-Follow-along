@@ -5,7 +5,7 @@
 #include <set>
 #include <stdexcept>
 
-Device::Device(Window& window) : window{ window } {
+LogicalDevice::LogicalDevice(Window& window) : window{ window } {
 	createInstance();
 	setupDebugMessenger();
 	createSurface();
@@ -13,7 +13,7 @@ Device::Device(Window& window) : window{ window } {
 	createLogicalDevice();
 }
 
-Device::~Device() {
+LogicalDevice::~LogicalDevice() {
 	vkDestroyDevice(device_, nullptr);
 	vkDestroySurfaceKHR(instance, surface_, nullptr);
 	if (enable_validation_layers) DebugUtils::destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
@@ -21,7 +21,7 @@ Device::~Device() {
 }
 
 void
-Device::createInstance() {
+LogicalDevice::createInstance() {
 	if (enable_validation_layers && !checkValidationLayerSupport()) {
 		throw std::runtime_error("Validation layer support needed but not found");
 	}
@@ -61,7 +61,7 @@ Device::createInstance() {
 }
 
 void
-Device::setupDebugMessenger() {
+LogicalDevice::setupDebugMessenger() {
 	if (!enable_validation_layers) return;
 
 	VkDebugUtilsMessengerCreateInfoEXT create_info{};
@@ -77,10 +77,10 @@ Device::setupDebugMessenger() {
 }
 
 void
-Device::createSurface() { window.createWindowSurface(instance, &surface_); }
+LogicalDevice::createSurface() { window.createWindowSurface(instance, &surface_); }
 
 void
-Device::pickPhysicalDevice() {
+LogicalDevice::pickPhysicalDevice() {
 	uint32_t device_count = 0;
 	vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 	if (device_count == 0) throw std::runtime_error("Failed to find GPUs with Vulkan support");
@@ -93,7 +93,7 @@ Device::pickPhysicalDevice() {
 }
 
 void 
-Device::createLogicalDevice() {
+LogicalDevice::createLogicalDevice() {
 	QueueFamilyIndices indices = findQueueFamilies(physical_device);
 	float queue_priority = 1.0f;
 
@@ -136,7 +136,7 @@ Device::createLogicalDevice() {
 }
 
 bool
-Device::checkValidationLayerSupport() {
+LogicalDevice::checkValidationLayerSupport() {
 	uint32_t layer_count;
 	vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 	std::vector<VkLayerProperties> available_layers(layer_count);
@@ -158,7 +158,7 @@ Device::checkValidationLayerSupport() {
 }
 
 std::vector<const char*>
-Device::getRequiredExtensions() {
+LogicalDevice::getRequiredExtensions() {
 	// Extensions required by GLFW
 	uint32_t glfw_extension_count = 0;
 	const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
@@ -172,15 +172,15 @@ Device::getRequiredExtensions() {
 }
 
 VkPhysicalDevice
-Device::findSuitableDevice(VkPhysicalDevice* devices, size_t device_count) {
+LogicalDevice::findSuitableDevice(VkPhysicalDevice* devices, size_t device_count) {
 	for (uint32_t counter = 0; counter < device_count; counter++) {
-		if (Device::isDeviceSuitable(devices[counter], surface_)) return devices[counter];
+		if (LogicalDevice::isDeviceSuitable(devices[counter], surface_)) return devices[counter];
 	}
 	return VK_NULL_HANDLE;
 }
 
 QueueFamilyIndices
-Device::findQueueFamilies(VkPhysicalDevice device) {
+LogicalDevice::findQueueFamilies(VkPhysicalDevice device) {
 	QueueFamilyIndices indices;
 
 	uint32_t queue_family_count = 0;
@@ -206,7 +206,7 @@ Device::findQueueFamilies(VkPhysicalDevice device) {
 }
 
 SwapChainSupportDetails
-Device::querySwapChainSupport(VkPhysicalDevice device) {
+LogicalDevice::querySwapChainSupport(VkPhysicalDevice device) {
 	SwapChainSupportDetails details;
 
 	// Basic surface capabilities (min/max number of images in swap chain, min/max width and height of images)
@@ -232,17 +232,17 @@ Device::querySwapChainSupport(VkPhysicalDevice device) {
 }
 
 bool
-Device::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface) {
+LogicalDevice::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface) {
 	// Graphics and present queue families exist
-	QueueFamilyIndices indices = Device::findQueueFamilies(device);
+	QueueFamilyIndices indices = LogicalDevice::findQueueFamilies(device);
 
 	// Required device extensions exist
-	bool extensions_supported = Device::checkDeviceExtensionSupport(device);
+	bool extensions_supported = LogicalDevice::checkDeviceExtensionSupport(device);
 
 	// At least a single image format and a single presentation mode exist
 	bool swap_chain_adequate = false;
 	if (extensions_supported) {
-		SwapChainSupportDetails swap_chain_support = Device::querySwapChainSupport(device);
+		SwapChainSupportDetails swap_chain_support = LogicalDevice::querySwapChainSupport(device);
 		swap_chain_adequate = !swap_chain_support.formats.empty() && !swap_chain_support.present_modes.empty();
 	}
 
@@ -250,7 +250,7 @@ Device::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR& surface) {
 }
 
 bool
-Device::checkDeviceExtensionSupport(VkPhysicalDevice device) {
+LogicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	// Acquire extensions supported by device
 	uint32_t extension_count;
 	vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);

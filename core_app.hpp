@@ -20,8 +20,8 @@ public:
 	/// </summary>
 	void run();
 
-	void createPipelineLayout();
 
+	void createPipelineLayout();
 	void createPipeline();
 
 	/// <summary>
@@ -31,8 +31,8 @@ public:
 
 private:
 	Window window{ WIDTH, HEIGHT, "Vulkan Tutorial" };
-	Device vulkan_device{ window };
+	LogicalDevice vulkan_device{ window };
 	SwapChain device_swap_chain{ vulkan_device, window.getExtent() };
-	std::unique_ptr<Pipeline> pipeline;
+	std::unique_ptr<GraphicsPipeline> pipeline;
 	VkPipelineLayout pipeline_layout;
 };

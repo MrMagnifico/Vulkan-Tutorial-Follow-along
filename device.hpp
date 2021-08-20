@@ -31,12 +31,12 @@ struct SwapChainSupportDetails {
 /// <summary>
 /// Class for managing device resources and functionality
 /// </summary>
-class Device {
+class LogicalDevice {
 public:
 	VkPhysicalDeviceProperties physical_device_properties;
 
-	Device(Window& window);
-	~Device();
+	LogicalDevice(Window& window);
+	~LogicalDevice();
 
 	VkDevice getDevice() { return device_; }
 	VkSurfaceKHR getSurface() { return surface_; }
@@ -70,10 +70,17 @@ private:
 	void pickPhysicalDevice();
 	void createLogicalDevice();
 
+	/// <summary>
+	/// Verify that all required validation layers (as specified in <c>validation_layers</c> are present
+	/// </summary>
+	/// <returns>A boolean indicating whether all the needed layers are present or not</returns>
 	bool checkValidationLayerSupport();
-
+	/// <summary>
+	/// Acquires a list of needed extensions based on <c>device_extensions</c>,
+	/// the extensions needed by GLFW and (if enabled) the extensions needed for debug validation layers
+	/// </summary>
+	/// <returns>String vector containing names of needed extensions</returns>
 	std::vector<const char*> getRequiredExtensions();
-
 	/// <summary>
 	/// Fetches a suitable device according to certain requirements.
 	/// See <c>isDeviceSuitable</c>

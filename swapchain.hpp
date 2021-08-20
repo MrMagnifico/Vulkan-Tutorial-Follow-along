@@ -4,7 +4,7 @@
 
 class SwapChain {
 public:
-	SwapChain(Device& device, VkExtent2D window_extent);
+	SwapChain(LogicalDevice& device, VkExtent2D window_extent);
 	~SwapChain();
 
 	VkImageView getImageView(int index) { return swap_chain_image_views[index]; }
@@ -24,7 +24,7 @@ private:
 
 	VkRenderPass render_pass;
 
-	Device& device;
+	LogicalDevice& device;
 	VkExtent2D window_extent;
 
 	VkSwapchainKHR swap_chain;

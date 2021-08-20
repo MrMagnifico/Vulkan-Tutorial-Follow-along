@@ -42,10 +42,10 @@ CoreApp::createPipelineLayout() {
 void
 CoreApp::createPipeline() {
 	PipelineConfigInfo pipeline_config{};
-	Pipeline::defaultPipelineConfigInfo(pipeline_config, device_swap_chain.getWidth(), device_swap_chain.getHeight());
+	GraphicsPipeline::defaultPipelineConfigInfo(pipeline_config, device_swap_chain.getWidth(), device_swap_chain.getHeight());
 	pipeline_config.render_pass = device_swap_chain.getRenderPass();
 	pipeline_config.pipeline_layout = pipeline_layout;
-	pipeline = std::make_unique<Pipeline>(
+	pipeline = std::make_unique<GraphicsPipeline>(
 		vulkan_device,
 		"shaders/vert.spv",
 		"shaders/frag.spv",
@@ -59,7 +59,7 @@ CoreApp::printSupportedExtensions() {
 	std::vector<VkExtensionProperties> extensions(extension_count);
 	vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
 
-	std::cout << "Found " << extension_count << " extensions\n";
+	std::cout << "Found " << extension_count << " instance extensions\n";
 	for (const VkExtensionProperties& extension : extensions) {
 		std::cout << "\t" << extension.extensionName << "\n";
 	}

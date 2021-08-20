@@ -3,13 +3,15 @@
 #include <algorithm>
 #include <stdexcept>
 
-SwapChain::SwapChain(Device& device, VkExtent2D window_extent) : device{ device }, window_extent{ window_extent } {
+SwapChain::SwapChain(LogicalDevice& device, VkExtent2D window_extent) : device{ device }, window_extent{ window_extent } {
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
 }
 
 SwapChain::~SwapChain() {
+	vkDestroyRenderPass(device.getDevice(), render_pass, nullptr);
+	
 	for (auto& image_view : swap_chain_image_views) { vkDestroyImageView(device.getDevice(), image_view, nullptr); }
 	swap_chain_image_views.clear();
 
@@ -17,8 +19,6 @@ SwapChain::~SwapChain() {
 		vkDestroySwapchainKHR(device.getDevice(), swap_chain, nullptr);
 		swap_chain = nullptr;
 	}
-
-	vkDestroyRenderPass(device.getDevice(), render_pass, nullptr);
 }
 
 void
@@ -144,7 +144,7 @@ SwapChain::createImageViews() {
 	}
 }
 
-//TODO: Expand to HDR colour ranges?
+// TODO: Expand to HDR colour ranges?
 VkSurfaceFormatKHR
 SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& available_swap_formats) {
 	for (const auto& format : available_swap_formats) {

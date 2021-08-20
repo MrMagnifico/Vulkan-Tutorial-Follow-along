@@ -40,7 +40,6 @@ public:
 	std::string getTitle() { return title; }
 	
 	GLFWwindow* getGlfwWindowPtr() { return window; }
-	
 
 private:
 	const int width;
