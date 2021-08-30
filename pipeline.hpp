@@ -40,6 +40,12 @@ public:
 	~GraphicsPipeline() { vkDestroyPipeline(device.getDevice(), internal_pipeline, nullptr); }
 
 	/// <summary>
+	/// Bind this pipeline to the given command buffer
+	/// </summary>
+	/// <param name="command_buffer">Command buffer to bind this pipeline to</param>
+	void bind(VkCommandBuffer command_buffer);
+
+	/// <summary>
 	/// Initialises a pipeline config struct with preset default values
 	/// </summary>
 	/// <param name="config_info">A memory-allocated struct to initialise values within</param>

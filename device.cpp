@@ -11,9 +11,11 @@ LogicalDevice::LogicalDevice(Window& window) : window{ window } {
 	createSurface();
 	pickPhysicalDevice();
 	createLogicalDevice();
+	createCommandPool();
 }
 
 LogicalDevice::~LogicalDevice() {
+	vkDestroyCommandPool(device_, command_pool, nullptr);
 	vkDestroyDevice(device_, nullptr);
 	vkDestroySurfaceKHR(instance, surface_, nullptr);
 	if (enable_validation_layers) DebugUtils::destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
@@ -132,7 +134,20 @@ LogicalDevice::createLogicalDevice() {
 
 	// Populate handles for the graphics and present queues
 	vkGetDeviceQueue(device_, indices.graphics_family.value(), 0, &graphics_queue_);
-	vkGetDeviceQueue(device_, indices.present_family.value(), 0, &graphics_queue_);
+	vkGetDeviceQueue(device_, indices.present_family.value(), 0, &present_queue_);
+}
+
+void
+LogicalDevice::createCommandPool() {
+	QueueFamilyIndices indices = findQueueFamilies(physical_device);
+
+	VkCommandPoolCreateInfo command_pool_create_info = {};
+	command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	command_pool_create_info.queueFamilyIndex = indices.graphics_family.value();
+
+	if (vkCreateCommandPool(device_, &command_pool_create_info, nullptr, &command_pool) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create command pool");
+	}
 }
 
 bool

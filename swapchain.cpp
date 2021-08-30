@@ -7,9 +7,16 @@ SwapChain::SwapChain(LogicalDevice& device, VkExtent2D window_extent) : device{ 
 	createSwapChain();
 	createImageViews();
 	createRenderPass();
+	createFramebuffers();
+	createSynchronisationObjects();
 }
 
 SwapChain::~SwapChain() {
+	vkDestroySemaphore(device.getDevice(), image_available_semaphore, nullptr);
+	vkDestroySemaphore(device.getDevice(), render_finished_semaphore, nullptr);
+
+	for (auto framebuffer : swap_chain_framebuffers) { vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr); }
+
 	vkDestroyRenderPass(device.getDevice(), render_pass, nullptr);
 	
 	for (auto& image_view : swap_chain_image_views) { vkDestroyImageView(device.getDevice(), image_view, nullptr); }
@@ -19,6 +26,55 @@ SwapChain::~SwapChain() {
 		vkDestroySwapchainKHR(device.getDevice(), swap_chain, nullptr);
 		swap_chain = nullptr;
 	}
+}
+
+VkResult
+SwapChain::acquireNextImage(uint32_t* image_index) {
+	return vkAcquireNextImageKHR(
+		device.getDevice(),
+		swap_chain,
+		UINT64_MAX, // Disables image availability timeout
+		image_available_semaphore, // Semaphore to signal when the image is acquired
+		VK_NULL_HANDLE, // No fences are used
+		image_index);
+}
+
+VkResult
+SwapChain::submitCommandBuffers(const VkCommandBuffer* command_buffer, uint32_t* image_index) {
+	VkSubmitInfo submit_info{};
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	
+	// Wait on color writing step until an image has been retrieved from the swapchain
+	VkSemaphore wait_semaphores[] = { image_available_semaphore };
+	VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submit_info.waitSemaphoreCount = 1;
+	submit_info.pWaitSemaphores = wait_semaphores;
+	submit_info.pWaitDstStageMask = wait_stages;
+
+	// Submit the command buffer linked to 
+	submit_info.commandBufferCount = 1;
+	submit_info.pCommandBuffers = command_buffer;
+
+	// Signal the rendering finished semaphore when the command buffer has finished executing
+	VkSemaphore signal_semaphores[] = { render_finished_semaphore };
+	submit_info.signalSemaphoreCount = 1;
+	submit_info.pSignalSemaphores = signal_semaphores;
+
+	if (vkQueueSubmit(device.getGraphicsQueue(), 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to submit draw command buffer");
+	}
+
+	VkPresentInfoKHR present_info{};
+	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	present_info.waitSemaphoreCount = 1;
+	present_info.pWaitSemaphores = signal_semaphores; // Wait until rendering has finished before presenting
+	VkSwapchainKHR swap_chains[] = { swap_chain }; // Specify which swapchain to present images to
+	present_info.swapchainCount = 1;
+	present_info.pSwapchains = swap_chains;
+	present_info.pImageIndices = image_index; // Specify which of the swapchain images to present to
+	present_info.pResults = nullptr;
+
+	return vkQueuePresentKHR(device.getPresentQueue(), &present_info);
 }
 
 void
@@ -102,12 +158,22 @@ SwapChain::createRenderPass() {
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &color_attachment_ref;
 
+	VkSubpassDependency dependency{};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // The built-in pre-pass dependency should wait
+	dependency.dstSubpass = 0; // And it waits on the subpass with index 0 (the only one in our case)
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; // Wait on the colour attachment output specifically, which occurs only after an image has been retrieved (see submitCommandBuffers)
+	dependency.srcAccessMask = 0;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; // The operation that should wait is in the color attachment stage
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // The exact operation that should wait is the final writing of the colors
+
 	VkRenderPassCreateInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = 1;
 	renderPassInfo.pAttachments = &colour_attachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
 
 	if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &render_pass) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create render pass");
@@ -144,6 +210,39 @@ SwapChain::createImageViews() {
 	}
 }
 
+void
+SwapChain::createFramebuffers() {
+	swap_chain_framebuffers.resize(swap_chain_image_views.size());
+
+	for (size_t i = 0; i < swap_chain_image_views.size(); i++) {
+		VkImageView attachments[] = { swap_chain_image_views[i] };
+
+		VkFramebufferCreateInfo framebuffer_create_info{};
+		framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebuffer_create_info.renderPass = render_pass;
+		framebuffer_create_info.attachmentCount = 1;
+		framebuffer_create_info.pAttachments = attachments;
+		framebuffer_create_info.width = swap_chain_extent.width;
+		framebuffer_create_info.height = swap_chain_extent.height;
+		framebuffer_create_info.layers = 1;
+
+		if (vkCreateFramebuffer(device.getDevice(), &framebuffer_create_info, nullptr, &swap_chain_framebuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to create framebuffer");
+		}
+	}
+}
+
+void
+SwapChain::createSynchronisationObjects() {
+	VkSemaphoreCreateInfo create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	if (vkCreateSemaphore(device.getDevice(), &create_info, nullptr, &image_available_semaphore) != VK_SUCCESS ||
+		vkCreateSemaphore(device.getDevice(), &create_info, nullptr, &render_finished_semaphore) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create synchronisation object(s)");
+	}
+}
+
 // TODO: Expand to HDR colour ranges?
 VkSurfaceFormatKHR
 SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& available_swap_formats) {
@@ -152,7 +251,7 @@ SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availa
 	}
 
 	// Fall back on first format if 32bpc SRGB is not found
-	available_swap_formats[0];
+	return available_swap_formats[0];
 }
 
 VkPresentModeKHR

@@ -86,6 +86,11 @@ void GraphicsPipeline::createGraphicsPipeline(
 }
 
 void
+GraphicsPipeline::bind(VkCommandBuffer command_buffer) {
+	vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, internal_pipeline);
+}
+
+void
 GraphicsPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& config_info, uint32_t width, uint32_t height) {
 	config_info.input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	config_info.input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Specifies that each 3 vertices describe a triangle with no reuse, see (https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions)

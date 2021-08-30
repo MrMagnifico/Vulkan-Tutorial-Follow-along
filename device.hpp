@@ -42,6 +42,7 @@ public:
 	VkSurfaceKHR getSurface() { return surface_; }
 	VkQueue getGraphicsQueue() { return graphics_queue_; }
 	VkQueue getPresentQueue() { return present_queue_; }
+	VkCommandPool getCommandPool() { return command_pool; }
 
 	SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physical_device); }
 	QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physical_device); }
@@ -64,11 +65,14 @@ private:
 	VkQueue graphics_queue_;
 	VkQueue present_queue_;
 
+	VkCommandPool command_pool;
+
 	void createInstance();
 	void setupDebugMessenger();
 	void createSurface();
 	void pickPhysicalDevice();
 	void createLogicalDevice();
+	void createCommandPool();
 
 	/// <summary>
 	/// Verify that all required validation layers (as specified in <c>validation_layers</c> are present

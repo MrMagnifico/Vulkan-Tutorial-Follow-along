@@ -7,6 +7,7 @@ public:
 	SwapChain(LogicalDevice& device, VkExtent2D window_extent);
 	~SwapChain();
 
+	VkFramebuffer getFramebuffer(int index) { return swap_chain_framebuffers[index]; }
 	VkImageView getImageView(int index) { return swap_chain_image_views[index]; }
 	size_t imageCount() { return swap_chain_images.size(); }
 	VkFormat getSwapChainImageFormat() { return swap_chain_image_format; }
@@ -15,12 +16,21 @@ public:
 	uint32_t getHeight() { return swap_chain_extent.height; }
 	VkRenderPass getRenderPass() { return render_pass; }
 
+	/// <summary>
+	/// Acquire the next available image to be rendered to
+	/// </summary>
+	/// <param name="image_index">Location to store the index of the image</param>
+	/// <returns></returns>
+	VkResult acquireNextImage(uint32_t* image_index);
+	VkResult submitCommandBuffers(const VkCommandBuffer* command_buffer, uint32_t* image_index);
+
 private:
 	VkFormat swap_chain_image_format;
 	VkExtent2D swap_chain_extent;
 
 	std::vector<VkImage> swap_chain_images;
 	std::vector<VkImageView> swap_chain_image_views;
+	std::vector<VkFramebuffer> swap_chain_framebuffers;
 
 	VkRenderPass render_pass;
 
@@ -29,9 +39,14 @@ private:
 
 	VkSwapchainKHR swap_chain;
 
+	VkSemaphore image_available_semaphore;
+	VkSemaphore render_finished_semaphore;
+
 	void createSwapChain();
 	void createImageViews();
 	void createRenderPass();
+	void createFramebuffers();
+	void createSynchronisationObjects();
 
 	/// <summary>
 	/// Choose a suitable swap format (currently attempts to select 32bpc sRGB) 

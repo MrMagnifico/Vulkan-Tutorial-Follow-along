@@ -19,10 +19,11 @@ public:
 	/// Entrypoint to the application
 	/// </summary>
 	void run();
-
+	void drawFrame();
 
 	void createPipelineLayout();
 	void createPipeline();
+	void createCommandBuffers();
 
 	/// <summary>
 	/// Print supported instance extensions to stdout
@@ -35,4 +36,5 @@ private:
 	SwapChain device_swap_chain{ vulkan_device, window.getExtent() };
 	std::unique_ptr<GraphicsPipeline> pipeline;
 	VkPipelineLayout pipeline_layout;
+	std::vector<VkCommandBuffer> command_buffers;
 };
