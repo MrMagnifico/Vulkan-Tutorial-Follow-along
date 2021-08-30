@@ -33,7 +33,7 @@ void
 CoreApp::drawFrame() {
 	uint32_t image_index;
 	auto result = device_swap_chain.acquireNextImage(&image_index);
-	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) { // Check that either image (with either full matching to surface specifications or not)
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) { // Check that image was retrieved (with either full matching to surface specifications or not)
 		throw std::runtime_error("Failed to acquire swapchain image");
 	}
 
@@ -65,8 +65,8 @@ CoreApp::createPipeline() {
 	pipeline_config.pipeline_layout = pipeline_layout;
 	pipeline = std::make_unique<GraphicsPipeline>(
 		vulkan_device,
-		"shaders/vert.spv",
-		"shaders/frag.spv",
+		"C:/Users/willy/source/repos/vulkan-tutorial Follow-Along/shaders/vert.spv",
+		"C:/Users/willy/source/repos/vulkan-tutorial Follow-Along/shaders/frag.spv",
 		pipeline_config);
 }
 

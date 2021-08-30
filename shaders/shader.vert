@@ -4,9 +4,9 @@ layout(location = 0) out vec3 frag_colour;
 
 // Fixed triangle positions for testing
 vec2 positions[3] = vec2[](
-    vec2(-0.5, -0.5),
-    vec2(-0.5, 0.5),
-    vec2(0.5, 0.0)
+    vec2(0.5, -0.5),
+    vec2(0.5, 0.5),
+    vec2(-0.5, 0.0)
 );
 
 // Fixed vertex colours for testing

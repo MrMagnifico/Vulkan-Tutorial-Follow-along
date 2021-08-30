@@ -9,8 +9,8 @@
 
 class CoreApp {
 public:
-	static const int WIDTH = 640;
-	static const int HEIGHT = 480;
+	static constexpr int WIDTH = 640;
+	static constexpr int HEIGHT = 480;
 
 	CoreApp();
 	~CoreApp();
@@ -19,6 +19,9 @@ public:
 	/// Entrypoint to the application
 	/// </summary>
 	void run();
+	/// <summary>
+	/// Draws a single frame
+	/// </summary>
 	void drawFrame();
 
 	void createPipelineLayout();

@@ -4,6 +4,8 @@
 
 class SwapChain {
 public:
+	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
 	SwapChain(LogicalDevice& device, VkExtent2D window_extent);
 	~SwapChain();
 
@@ -39,8 +41,11 @@ private:
 
 	VkSwapchainKHR swap_chain;
 
-	VkSemaphore image_available_semaphore;
-	VkSemaphore render_finished_semaphore;
+	std::vector<VkSemaphore> image_available_semaphores;
+	std::vector<VkSemaphore> render_finished_semaphores;
+	std::vector<VkFence> in_flight_fences;
+	std::vector<VkFence> images_in_flight; // Keeps track of which images are in flight by their fences so they're not accidentally used before work being done on them has concluded
+	size_t current_frame = 0;
 
 	void createSwapChain();
 	void createImageViews();

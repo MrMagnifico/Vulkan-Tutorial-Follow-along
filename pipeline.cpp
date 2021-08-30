@@ -26,8 +26,8 @@ void GraphicsPipeline::createGraphicsPipeline(
 	}
 
 	// START OF PROGRAMMABLE STAGES CREATION
-	std::vector<char> vert_shader_code = FileUtils::readFile("shaders/vert.spv");
-	std::vector<char> frag_shader_code = FileUtils::readFile("shaders/frag.spv");
+	std::vector<char> vert_shader_code = FileUtils::readFile(vert_file_path);
+	std::vector<char> frag_shader_code = FileUtils::readFile(frag_file_path);
 	VkShaderModule vert_shader_module = ShaderUtils::createShaderModule(device.getDevice(), vert_shader_code);
 	VkShaderModule frag_shader_module = ShaderUtils::createShaderModule(device.getDevice(), frag_shader_code);
 
