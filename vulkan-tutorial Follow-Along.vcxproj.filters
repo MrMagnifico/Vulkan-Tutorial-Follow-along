@@ -39,6 +39,9 @@
     <ClCompile Include="pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debug.hpp">
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pipeline.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -160,6 +160,7 @@
     <ClCompile Include="device.cpp" />
     <ClCompile Include="files.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="model.cpp" />
     <ClCompile Include="pipeline.cpp" />
     <ClCompile Include="swapchain.cpp" />
     <ClCompile Include="window.cpp" />
@@ -169,6 +170,7 @@
     <ClInclude Include="debug.hpp" />
     <ClInclude Include="device.hpp" />
     <ClInclude Include="files.hpp" />
+    <ClInclude Include="model.hpp" />
     <ClInclude Include="pipeline.hpp" />
     <ClInclude Include="swapchain.hpp" />
     <ClInclude Include="window.hpp" />

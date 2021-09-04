@@ -1,4 +1,5 @@
 #include "files.hpp"
+#include "model.hpp"
 #include "pipeline.hpp"
 
 #include <stdexcept>
@@ -46,7 +47,13 @@ void GraphicsPipeline::createGraphicsPipeline(
 
 	// First stage of fixed function stages set
 	VkPipelineVertexInputStateCreateInfo vertex_input_info{};
+	auto binding_description = Vertex::getBindingDescription();
+	auto attribute_descriptions = Vertex::getAttributeDescriptions();
 	vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertex_input_info.vertexBindingDescriptionCount = 1;
+	vertex_input_info.pVertexBindingDescriptions = &binding_description;
+	vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
+	vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions.data();
 	
 	// START OF PIPELINE CREATION
 	VkGraphicsPipelineCreateInfo pipeline_info{};

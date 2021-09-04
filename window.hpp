@@ -17,7 +17,6 @@ public:
 	/// <param name="height">Height of the window in pixels</param>
 	/// <param name="title">Title of the window</param>
 	Window(int width, int height, std::string title);
-	
 	~Window();
 
 	/// <summary>

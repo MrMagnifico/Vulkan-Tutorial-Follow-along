@@ -73,8 +73,8 @@ CoreApp::createPipeline() {
 	pipeline_config.pipeline_layout = pipeline_layout;
 	pipeline = std::make_unique<GraphicsPipeline>(
 		vulkan_device,
-		"C:/Users/willy/source/repos/vulkan-tutorial Follow-Along/shaders/vert.spv",
-		"C:/Users/willy/source/repos/vulkan-tutorial Follow-Along/shaders/frag.spv",
+		"shaders/vert.spv",
+		"shaders/frag.spv",
 		pipeline_config);
 }
 
