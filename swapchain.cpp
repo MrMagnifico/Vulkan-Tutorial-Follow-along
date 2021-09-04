@@ -3,12 +3,15 @@
 #include <algorithm>
 #include <stdexcept>
 
-SwapChain::SwapChain(LogicalDevice& device, VkExtent2D window_extent) : device{ device }, window_extent{ window_extent } {
-	createSwapChain();
-	createImageViews();
-	createRenderPass();
-	createFramebuffers();
-	createSynchronisationObjects();
+SwapChain::SwapChain(LogicalDevice& device, VkExtent2D window_extent)
+	: device{ device }, window_extent{ window_extent } {
+	init();
+}
+
+SwapChain::SwapChain(LogicalDevice& device, VkExtent2D window_extent, std::shared_ptr<SwapChain> previous)
+	: device{ device }, window_extent{ window_extent }, old_swap_chain{previous} {
+	init();
+	old_swap_chain = nullptr;
 }
 
 SwapChain::~SwapChain() {
@@ -29,6 +32,15 @@ SwapChain::~SwapChain() {
 		vkDestroySwapchainKHR(device.getDevice(), swap_chain, nullptr);
 		swap_chain = nullptr;
 	}
+}
+
+void
+SwapChain::init() {
+	createSwapChain();
+	createImageViews();
+	createRenderPass();
+	createFramebuffers();
+	createSynchronisationObjects();
 }
 
 VkResult
@@ -120,7 +132,7 @@ SwapChain::createSwapChain() {
 	create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR; // Ignore alpha channel, no blending needed
 	create_info.presentMode = present_mode;
 	create_info.clipped = VK_TRUE; // Ignore obscured pixels (it's 2D occlussion culling bro)
-	create_info.oldSwapchain = VK_NULL_HANDLE; // Only single swapchain for now, no fallback
+	create_info.oldSwapchain = old_swap_chain == nullptr ? VK_NULL_HANDLE : old_swap_chain->swap_chain; // Allows for continuing to execute remaining drawing commands if an old swapchain existed
 
 	// Populate info about image sharing amongst queue families
 	QueueFamilyIndices indices = device.findPhysicalQueueFamilies();

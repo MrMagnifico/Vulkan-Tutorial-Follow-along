@@ -144,6 +144,7 @@ LogicalDevice::createCommandPool() {
 	VkCommandPoolCreateInfo command_pool_create_info = {};
 	command_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	command_pool_create_info.queueFamilyIndex = indices.graphics_family.value();
+	command_pool_create_info.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT; // See https://www.khronos.org/registry/vulkan/specs/1.2-extensions/man/html/VkCommandPoolCreateFlagBits.html
 
 	if (vkCreateCommandPool(device_, &command_pool_create_info, nullptr, &command_pool) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create command pool");

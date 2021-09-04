@@ -2,11 +2,16 @@
 
 #include "device.hpp"
 
+#include <memory>
+#include <vector>
+
+
 class SwapChain {
 public:
 	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 	SwapChain(LogicalDevice& device, VkExtent2D window_extent);
+	SwapChain(LogicalDevice& device, VkExtent2D window_extent, std::shared_ptr<SwapChain> previous);
 	~SwapChain();
 
 	VkFramebuffer getFramebuffer(int index) { return swap_chain_framebuffers[index]; }
@@ -40,6 +45,7 @@ private:
 	VkExtent2D window_extent;
 
 	VkSwapchainKHR swap_chain;
+	std::shared_ptr<SwapChain> old_swap_chain;
 
 	std::vector<VkSemaphore> image_available_semaphores;
 	std::vector<VkSemaphore> render_finished_semaphores;
@@ -47,6 +53,7 @@ private:
 	std::vector<VkFence> images_in_flight; // Keeps track of which images are in flight by their fences so they're not accidentally used before work being done on them has concluded
 	size_t current_frame = 0;
 
+	void init();
 	void createSwapChain();
 	void createImageViews();
 	void createRenderPass();

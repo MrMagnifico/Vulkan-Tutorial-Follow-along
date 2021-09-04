@@ -19,14 +19,6 @@ public:
 	/// Entrypoint to the application
 	/// </summary>
 	void run();
-	/// <summary>
-	/// Draws a single frame
-	/// </summary>
-	void drawFrame();
-
-	void createPipelineLayout();
-	void createPipeline();
-	void createCommandBuffers();
 
 	/// <summary>
 	/// Print supported instance extensions to stdout
@@ -36,8 +28,20 @@ public:
 private:
 	Window window{ WIDTH, HEIGHT, "Vulkan Tutorial" };
 	LogicalDevice vulkan_device{ window };
-	SwapChain device_swap_chain{ vulkan_device, window.getExtent() };
+	std::unique_ptr<SwapChain> device_swap_chain;
 	std::unique_ptr<GraphicsPipeline> pipeline;
 	VkPipelineLayout pipeline_layout;
 	std::vector<VkCommandBuffer> command_buffers;
+
+	/// <summary>
+	/// Draws a single frame
+	/// </summary>
+	void drawFrame();
+
+	void createPipelineLayout();
+	void createPipeline();
+	void createCommandBuffers();
+	void freeCommandBuffers();
+	void recordCommandBuffer(int image_index);
+	void recreateSwapChain();
 };

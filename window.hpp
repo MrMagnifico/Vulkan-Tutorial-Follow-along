@@ -33,22 +33,26 @@ public:
 	/// <param name="surface">Pointer to struct to store surface data</param>
 	void createWindowSurface(VkInstance instance, VkSurfaceKHR* surface);
 
+	void resetWindowResizedFlag() { frame_buffer_resized = false; }
+
 	int getWidth() { return width; }
 	int getHeight() { return height; }
 	VkExtent2D getExtent() { return { static_cast<uint32_t>(width), static_cast<uint32_t>(height) }; }
-
 	std::string getTitle() { return title; }
-	
 	GLFWwindow* getGlfwWindowPtr() { return window; }
+	bool wasWindowResized() { return frame_buffer_resized; }
 
 private:
-	const int width;
-	const int height;
+	int width;
+	int height;
 	std::string title;
 	GLFWwindow* window;
+	bool frame_buffer_resized = false;
 
 	/// <summary>
 	/// Initialise the internal GLFW window
 	/// </summary>
 	void initWindow();
+
+	static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 };

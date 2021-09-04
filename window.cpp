@@ -23,7 +23,16 @@ Window::initWindow() {
 	glfwInit();
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Do not create OpenGL context
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // Do not make window resizable
 
 	window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+	glfwSetWindowUserPointer(window, this); // Store pointer to this Window instance in the GLFWwindow object
+	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+}
+
+void
+Window::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
+	Window *window_container = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+	window_container->frame_buffer_resized = true;
+	window_container->width = width;
+	window_container->height = height;
 }
