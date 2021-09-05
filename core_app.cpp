@@ -10,6 +10,7 @@
 #include <set>
 
 CoreApp::CoreApp() {
+	loadModels();
 	createPipelineLayout();
 	recreateSwapChain();
 	createCommandBuffers();
@@ -49,6 +50,20 @@ CoreApp::drawFrame() {
 	} else if (result != VK_SUCCESS) {
 		throw std::runtime_error("Failed to present swapchain image");
 	}
+}
+
+void
+CoreApp::loadModels() {
+	// Pre-set vertices for testing
+	std::vector<Vertex> vertices = {
+		{{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}},
+		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+		{{0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+		{{0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{-0.5f, 0.5f}, {0.0f, 0.0f, 0.0f}}
+	};
+	scene = std::make_unique<Model>(vulkan_device, vertices);
 }
 
 void
@@ -121,14 +136,12 @@ CoreApp::recordCommandBuffer(int image_index) {
 	render_pass_begin_info.pClearValues = &clear_color;
 	vkCmdBeginRenderPass(command_buffers[image_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE); // Finalise render pass begin command
 
+	// Connect pipeline and scene/vertices to the buffer
 	pipeline->bind(command_buffers[image_index]);
+	scene->bind(command_buffers[image_index]);
 
-	vkCmdDraw(
-		command_buffers[image_index],
-		3,	// We're only drawing 3 pre-defined vertices at the moment
-		1,	// Instance count is set to 1 if instanced rendering is not being used
-		0,	// Offset into vertex buffer, we start indexing from 0 as normal
-		0);	// We don't use instanced rendering, so we keep this to 0 
+	// Add command to draw the scene's vertices
+	scene->draw(command_buffers[image_index]);
 
 	vkCmdEndRenderPass(command_buffers[image_index]);
 

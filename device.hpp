@@ -44,8 +44,33 @@ public:
 	VkQueue getPresentQueue() { return present_queue_; }
 	VkCommandPool getCommandPool() { return command_pool; }
 
-	SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physical_device); }
+	// Device properties
+	/// <summary>
+	/// Acquire index of a suitable memory type
+	/// </summary>
+	/// <param name="type_filter">Bitmask filter that specifies which memory types are suitable</param>
+	/// <param name="properties">Bitmask filter that specifies properties that the memory type must have</param>
+	/// <returns>Index of the memory type within the physical device memory type array</returns>
+	uint32_t findMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties);
 	QueueFamilyIndices findPhysicalQueueFamilies() { return findQueueFamilies(physical_device); }
+	SwapChainSupportDetails getSwapChainSupport() { return querySwapChainSupport(physical_device); }
+
+	// Buffer functionality
+	/// <summary>
+	/// Creates a buffer on this device.
+	/// </summary>
+	/// <param name="size">Size of the buffer in byes</param>
+	/// <param name="usage">Flags specifying what the buffer will be used for</param>
+	/// <param name="properties">Bit mask of properties that the underlying memory of the buffer should have</param>
+	/// <param name="buffer">Buffer object to allocate to</param>
+	/// <param name="buffer_memory">Buffer memory object to allocate to</param>
+	void createBuffer(
+		VkDeviceSize size,
+		VkBufferUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		VkBuffer& buffer,
+		VkDeviceMemory& buffer_memory);
+
 private:
 #ifdef NDEBUG
 	const bool enable_validation_layers = false;

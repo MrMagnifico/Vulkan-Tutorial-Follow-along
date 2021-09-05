@@ -278,3 +278,51 @@ LogicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	for (auto& extension : extensions) { required_extensions.erase(extension.extensionName); }
 	return required_extensions.empty();
 }
+
+uint32_t
+LogicalDevice::findMemoryType(uint32_t type_filter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties mem_properties;
+	vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
+
+	for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+		if (type_filter & (1 << i) &&
+			(mem_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("Failed to find suitable memory type");
+}
+
+void
+LogicalDevice::createBuffer(
+	VkDeviceSize size,
+	VkBufferUsageFlags usage,
+	VkMemoryPropertyFlags properties,
+	VkBuffer& buffer,
+	VkDeviceMemory& buffer_memory) {
+	// Create the logical buffer itself
+	VkBufferCreateInfo buffer_create_info{};
+	buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	buffer_create_info.size = size;
+	buffer_create_info.usage = usage;
+	buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE; // Buffer will be owned exclusively by a specific queue family
+	if (vkCreateBuffer(device_, &buffer_create_info, nullptr, &buffer) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create buffer on Vulkan device");
+	}
+
+	// Acquire requirements of underlying memory needed by buffer
+	VkMemoryRequirements mem_requirements;
+	vkGetBufferMemoryRequirements(device_, buffer, &mem_requirements);
+
+	// Allocate the underlying memory utilised by the buffer
+	VkMemoryAllocateInfo mem_alloc_info{};
+	mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	mem_alloc_info.allocationSize = mem_requirements.size;
+	mem_alloc_info.memoryTypeIndex = findMemoryType(mem_requirements.memoryTypeBits, properties);
+	if (vkAllocateMemory(device_, &mem_alloc_info, nullptr, &buffer_memory) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to allocate memory on Vulkan device");
+	}
+
+	vkBindBufferMemory(device_, buffer, buffer_memory, 0); // Connect buffer to underlying memory
+}

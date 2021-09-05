@@ -1,6 +1,7 @@
 #pragma once
 
 #include "device.hpp"
+#include "model.hpp"
 #include "pipeline.hpp"
 #include "swapchain.hpp"
 #include "window.hpp"
@@ -32,12 +33,14 @@ private:
 	std::unique_ptr<GraphicsPipeline> pipeline;
 	VkPipelineLayout pipeline_layout;
 	std::vector<VkCommandBuffer> command_buffers;
+	std::unique_ptr<Model> scene;
 
 	/// <summary>
 	/// Draws a single frame
 	/// </summary>
 	void drawFrame();
 
+	void loadModels();
 	void createPipelineLayout();
 	void createPipeline();
 	void createCommandBuffers();
