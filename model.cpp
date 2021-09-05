@@ -28,13 +28,23 @@ Vertex::getAttributeDescriptions() {
 	return attribute_descriptions;
 }
 
-Model::Model(LogicalDevice& device, const std::vector<Vertex>& vertices) : logical_device{ device } {
+Model::Model(LogicalDevice& device, const std::vector<Vertex>& vertices): logical_device{ device } {
 	createVertexBuffers(vertices);
+}
+
+Model::Model(LogicalDevice& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t> indices) : logical_device{ device } {
+	createVertexBuffers(vertices);
+	createIndexBuffers(indices);
 }
 
 Model::~Model() {
 	vkDestroyBuffer(logical_device.getDevice(), vertex_buffer, nullptr);
 	vkFreeMemory(logical_device.getDevice(), vertex_buffer_memory, nullptr);
+
+	if (has_index_buffer) {
+		vkDestroyBuffer(logical_device.getDevice(), index_buffer, nullptr);
+		vkFreeMemory(logical_device.getDevice(), index_buffer_memory, nullptr);
+	}
 }
 
 void
@@ -42,11 +52,14 @@ Model::bind(VkCommandBuffer command_buffer) {
 	VkBuffer buffers[] = { vertex_buffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(command_buffer, 0, 1, buffers, offsets);
+
+	if (has_index_buffer) { vkCmdBindIndexBuffer(command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32); }
 }
 
 void
 Model::draw(VkCommandBuffer command_buffer) {
-	vkCmdDraw(command_buffer, vertex_count, 1, 0, 0);
+	if (has_index_buffer) vkCmdDrawIndexed(command_buffer, index_count, 1, 0, 0, 0);
+	else vkCmdDraw(command_buffer, vertex_count, 1, 0, 0);
 }
 
 void
@@ -81,6 +94,45 @@ Model::createVertexBuffers(const std::vector<Vertex> vertices) {
 		vertex_buffer,
 		vertex_buffer_memory);
 	logical_device.copyBuffer(staging_buffer, vertex_buffer, buffer_size);
+
+	// Clean up staging buffer resources
+	vkDestroyBuffer(logical_device.getDevice(), staging_buffer, nullptr);
+	vkFreeMemory(logical_device.getDevice(), staging_buffer_memory, nullptr);
+}
+
+void
+Model::createIndexBuffers(const std::vector<uint32_t> indices) {
+	// Determine if indices are used and how big the index buffer should be if so
+	index_count = static_cast<uint32_t>(indices.size());
+	has_index_buffer = index_count > 0;
+	if (!has_index_buffer) return;
+	VkDeviceSize buffer_size = sizeof(indices[0]) * index_count;
+
+	// Create a staging buffer to move resources to from host memory
+	VkBuffer staging_buffer;
+	VkDeviceMemory staging_buffer_memory;
+	logical_device.createBuffer(
+		buffer_size,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT, // Buffer will be used for copying to vertex buffer from
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, // Underlying memory should be visible to the host device (i.e: CPU)
+		staging_buffer,
+		staging_buffer_memory
+	);
+
+	// Copy index data to staging buffer
+	void* data;
+	vkMapMemory(logical_device.getDevice(), staging_buffer_memory, 0, buffer_size, 0, &data);
+	memcpy(data, indices.data(), static_cast<size_t>(buffer_size));
+	vkUnmapMemory(logical_device.getDevice(), staging_buffer_memory);
+
+	// Create index buffer with underlying memory type being the most optimal for the graphics device (which is why we use a staging buffer first) and copy index data to it
+	logical_device.createBuffer(
+		buffer_size,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, // Buffer will be used as an index buffer and will be transferred to from the staging buffer
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, // Underlying memory is the most efficient for access by the Vulkan device
+		index_buffer,
+		index_buffer_memory);
+	logical_device.copyBuffer(staging_buffer, index_buffer, buffer_size);
 
 	// Clean up staging buffer resources
 	vkDestroyBuffer(logical_device.getDevice(), staging_buffer, nullptr);

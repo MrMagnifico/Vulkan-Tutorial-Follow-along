@@ -35,6 +35,7 @@ struct Vertex {
 class Model {
 public:
     Model(LogicalDevice& device, const std::vector<Vertex>& vertices);
+    Model(LogicalDevice& device, const std::vector<Vertex>& vertices, const std::vector<uint32_t> indices);
     ~Model();
 
     /// <summary>
@@ -50,13 +51,24 @@ public:
 
 private:
     LogicalDevice& logical_device;
+
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
     uint32_t vertex_count;
+
+    VkBuffer index_buffer;
+    VkDeviceMemory index_buffer_memory;
+    uint32_t index_count;
+    bool has_index_buffer = false;
 
     /// <summary>
     /// Creates a buffer on the Vulkan device to store vertex data
     /// </summary>
     /// <param name="vertices">Vertices whose data is to be stored</param>
     void createVertexBuffers(const std::vector<Vertex> vertices);
+    /// <summary>
+    /// Creates a buffer on the Vulkan device to store triangle index data
+    /// </summary>
+    /// <param name="indices">Indices in vertex buffer of vertices used by each triangle (must be in groups of 3)</param>
+    void createIndexBuffers(const std::vector<uint32_t> indices);
 };
