@@ -326,3 +326,49 @@ LogicalDevice::createBuffer(
 
 	vkBindBufferMemory(device_, buffer, buffer_memory, 0); // Connect buffer to underlying memory
 }
+
+VkCommandBuffer
+LogicalDevice::beginSingleTimeCommands() {
+	VkCommandBufferAllocateInfo alloc_info{};
+	alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	alloc_info.commandPool = command_pool;
+	alloc_info.commandBufferCount = 1;
+
+	VkCommandBuffer command_buffer;
+	vkAllocateCommandBuffers(device_, &alloc_info, &command_buffer);
+
+	VkCommandBufferBeginInfo begin_info{};
+	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+	vkBeginCommandBuffer(command_buffer, &begin_info);
+
+	return command_buffer;
+}
+
+void
+LogicalDevice::endSingleTimeCommands(VkCommandBuffer command_buffer) {
+	vkEndCommandBuffer(command_buffer);
+
+	VkSubmitInfo submit_info{};
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit_info.commandBufferCount = 1;
+	submit_info.pCommandBuffers = &command_buffer;
+	vkQueueSubmit(graphics_queue_, 1, &submit_info, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphics_queue_);
+
+	vkFreeCommandBuffers(device_, command_pool, 1, &command_buffer);
+}
+
+void
+LogicalDevice::copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {
+	VkCommandBuffer copy_command_buffer = beginSingleTimeCommands();
+
+	VkBufferCopy copy_region{};
+	copy_region.srcOffset = 0;
+	copy_region.dstOffset = 0;
+	copy_region.size = size;
+	vkCmdCopyBuffer(copy_command_buffer, src_buffer, dst_buffer, 1, &copy_region);
+
+	endSingleTimeCommands(copy_command_buffer);
+}

@@ -70,6 +70,25 @@ public:
 		VkMemoryPropertyFlags properties,
 		VkBuffer& buffer,
 		VkDeviceMemory& buffer_memory);
+	/// <summary>
+	/// Allocate and fill begin info for a command buffer intended to be executed only once
+	/// </summary>
+	/// <returns>An allocated command buffer with suitable single usage begin info</returns>
+	VkCommandBuffer beginSingleTimeCommands();
+	/// <summary>
+	/// End recording of the given single-use command buffer, submit it for execution to the graphics queue and free its resources.
+	/// Its execution will be waited on, so on function return the command will have finished execution (note that this prevents parallel operations on the graphics queue)
+	/// </summary>
+	/// <param name="command_buffer">Command buffer meant to be executed only once by the graphics queue</param>
+	void endSingleTimeCommands(VkCommandBuffer command_buffer);
+	/// <summary>
+	/// Copy the contents of the src_buffer to the dst_buffer completely, starting at location 0 (i.e: no offsets).
+	/// No checks are made as to whether the buffer's sizes actually allow for the operation (it is assumed they do)
+	/// </summary>
+	/// <param name="src_buffer">Buffer to copy data from</param>
+	/// <param name="dst_buffer">Buffer to copy data to</param>
+	/// <param name="size">Number of bytes to copy</param>
+	void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
 
 private:
 #ifdef NDEBUG
