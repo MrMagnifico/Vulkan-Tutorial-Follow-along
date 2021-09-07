@@ -10,7 +10,7 @@
 #include <set>
 
 CoreApp::CoreApp() {
-	loadModels();
+	loadSceneObjects();
 	createPipelineLayout();
 	recreateSwapChain();
 	createCommandBuffers();
@@ -53,8 +53,28 @@ CoreApp::drawFrame() {
 }
 
 void
-CoreApp::loadModels() {
-	// Pre-set vertices for testing
+CoreApp::renderSceneObjects(VkCommandBuffer command_buffer) {
+	pipeline->bind(command_buffer);
+
+	for (SceneObject object : scene_objects) {
+		PushConstantData push_constant_data{};
+		push_constant_data.transformation = object.transformation.affineMatrix();
+		vkCmdPushConstants(
+			command_buffer,
+			pipeline_layout,
+			VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			0,
+			sizeof(PushConstantData),
+			&push_constant_data);
+
+		object.model->bind(command_buffer);
+		object.model->draw(command_buffer);
+	}
+}
+
+void
+CoreApp::loadSceneObjects() {
+	// Load model(s)
 	std::vector<Vertex> vertices = {
 		{{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
 		{{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
@@ -62,22 +82,21 @@ CoreApp::loadModels() {
 		{{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
 	};
 	std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
-	scene = std::make_unique<Model>(vulkan_device, vertices, indices);
+	auto model = std::make_shared<Model>(vulkan_device, vertices, indices);
+
+	// Generate object(s)
+	auto square = SceneObject(model);
+	scene_objects.push_back(std::move(square));
 }
 
 void
 CoreApp::createPipelineLayout() {
-	VkPushConstantRange push_constant_range{};
-	push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	push_constant_range.offset = 0;
-	push_constant_range.size = sizeof(PushConstantData);
-
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 0;
 	pipelineLayoutInfo.pSetLayouts = nullptr;
-	pipelineLayoutInfo.pushConstantRangeCount = 1;
-	pipelineLayoutInfo.pPushConstantRanges = &push_constant_range;
+	pipelineLayoutInfo.pushConstantRangeCount = 0;
+	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
 	if (vkCreatePipelineLayout(vulkan_device.getDevice(), &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create pipeline layout");
@@ -140,12 +159,8 @@ CoreApp::recordCommandBuffer(int image_index) {
 	render_pass_begin_info.pClearValues = &clear_color;
 	vkCmdBeginRenderPass(command_buffers[image_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE); // Finalise render pass begin command
 
-	// Connect pipeline and scene/vertices to the buffer
-	pipeline->bind(command_buffers[image_index]);
-	scene->bind(command_buffers[image_index]);
-
-	// Add command to draw the scene's vertices
-	scene->draw(command_buffers[image_index]);
+	// Connect pipeline and scene object models to command buffer
+	renderSceneObjects(command_buffers[image_index]);
 
 	vkCmdEndRenderPass(command_buffers[image_index]);
 

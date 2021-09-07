@@ -1,8 +1,8 @@
 #pragma once
 
 #include "device.hpp"
-#include "model.hpp"
 #include "pipeline.hpp"
+#include "scene_object.hpp"
 #include "swapchain.hpp"
 #include "window.hpp"
 
@@ -33,14 +33,19 @@ private:
 	std::unique_ptr<GraphicsPipeline> pipeline;
 	VkPipelineLayout pipeline_layout;
 	std::vector<VkCommandBuffer> command_buffers;
-	std::unique_ptr<Model> scene;
+	std::vector<SceneObject> scene_objects;
 
 	/// <summary>
 	/// Draws a single frame
 	/// </summary>
 	void drawFrame();
+	/// <summary>
+	/// Bind pipeline and add push constant and model data to the given buffer
+	/// </summary>
+	/// <param name="command_buffer">Command buffer to add scene object render data to</param>
+	void renderSceneObjects(VkCommandBuffer command_buffer);
 
-	void loadModels();
+	void loadSceneObjects();
 	void createPipelineLayout();
 	void createPipeline();
 	void createCommandBuffers();

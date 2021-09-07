@@ -2,21 +2,10 @@
 
 #include "device.hpp"
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 
 #include <array>
 #include <vector>
-
-/// <summary>
-/// Defines data to be provided as a push constant, taking into account alignment constraints.
-/// See (https://www.khronos.org/registry/vulkan/specs/1.1-extensions/html/chap15.html#interfaces-resources-layout
-/// and https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets#page_Alignment-requirements)
-/// </summary>
-struct PushConstantData {
-    alignas(16) glm::mat4 transformation;
-};
 
 /// <summary>
 /// Defines data elements of a vertex and methods to get Vulkan descriptions of these elements

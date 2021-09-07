@@ -50,7 +50,7 @@ public:
 	/// </summary>
 	/// <param name="config_info">A memory-allocated struct to initialise values within</param>
 	/// <param name="width">Width of images to be rendered by the pipeline</param>
-	/// <param name="height">Height of images to be rendered by the pipeline</param>
+	/// <param name="height">Hiehgt of images to be rendered by the pipeline</param>
 	static void defaultPipelineConfigInfo(PipelineConfigInfo& config_info, uint32_t width, uint32_t height);
 
 private:

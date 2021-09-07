@@ -172,6 +172,7 @@
     <ClInclude Include="files.hpp" />
     <ClInclude Include="model.hpp" />
     <ClInclude Include="pipeline.hpp" />
+    <ClInclude Include="scene_object.hpp" />
     <ClInclude Include="swapchain.hpp" />
     <ClInclude Include="window.hpp" />
   </ItemGroup>
