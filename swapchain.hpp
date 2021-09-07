@@ -19,17 +19,20 @@ public:
 	size_t imageCount() { return swap_chain_images.size(); }
 	VkFormat getSwapChainImageFormat() { return swap_chain_image_format; }
 	VkExtent2D getSwapChainExtent() { return swap_chain_extent; }
-	uint32_t getWidth() { return swap_chain_extent.width; }
-	uint32_t getHeight() { return swap_chain_extent.height; }
 	VkRenderPass getRenderPass() { return render_pass; }
 
 	/// <summary>
-	/// Acquire the next available image to be rendered to
+	/// Acquire the index of the next available image to be rendered to
 	/// </summary>
 	/// <param name="image_index">Location to store the index of the image</param>
-	/// <returns></returns>
+	/// <returns>Result of image acquisition operation</returns>
 	VkResult acquireNextImage(uint32_t* image_index);
 	VkResult submitCommandBuffers(const VkCommandBuffer* command_buffer, uint32_t* image_index);
+
+	bool compareSwapFormats(const SwapChain& swap_chain) const {
+		return swap_chain.swap_chain_image_format == swap_chain_image_format;
+		// TODO: Add depth format check when depth buffering is added
+	}
 
 private:
 	VkFormat swap_chain_image_format;

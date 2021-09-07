@@ -162,6 +162,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="pipeline.cpp" />
+    <ClCompile Include="renderer.cpp" />
+    <ClCompile Include="simple_render_system.cpp" />
     <ClCompile Include="swapchain.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
@@ -172,7 +174,9 @@
     <ClInclude Include="files.hpp" />
     <ClInclude Include="model.hpp" />
     <ClInclude Include="pipeline.hpp" />
+    <ClInclude Include="renderer.hpp" />
     <ClInclude Include="scene_object.hpp" />
+    <ClInclude Include="simple_render_system.hpp" />
     <ClInclude Include="swapchain.hpp" />
     <ClInclude Include="window.hpp" />
   </ItemGroup>

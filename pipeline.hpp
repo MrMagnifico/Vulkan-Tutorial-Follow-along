@@ -6,8 +6,6 @@
 #include <vector>
 
 struct PipelineConfigInfo {
-	VkViewport viewport;
-	VkRect2D scissor;
 	VkPipelineViewportStateCreateInfo viewport_info;
 	VkPipelineInputAssemblyStateCreateInfo input_assembly_info;
 	VkPipelineRasterizationStateCreateInfo rasterization_info;
@@ -15,6 +13,8 @@ struct PipelineConfigInfo {
 	VkPipelineColorBlendAttachmentState color_blend_attachment;
 	VkPipelineColorBlendStateCreateInfo color_blend_info;
 	VkPipelineDepthStencilStateCreateInfo depth_stencil_info;
+	std::vector<VkDynamicState> dynamic_state_enables;
+	VkPipelineDynamicStateCreateInfo dynamic_state_info;
 	VkPipelineLayout pipeline_layout = nullptr;
 	VkRenderPass render_pass = nullptr;
 	uint32_t subpass = 0;
@@ -49,9 +49,7 @@ public:
 	/// Initialises a pipeline config struct with preset default values
 	/// </summary>
 	/// <param name="config_info">A memory-allocated struct to initialise values within</param>
-	/// <param name="width">Width of images to be rendered by the pipeline</param>
-	/// <param name="height">Hiehgt of images to be rendered by the pipeline</param>
-	static void defaultPipelineConfigInfo(PipelineConfigInfo& config_info, uint32_t width, uint32_t height);
+	static void defaultPipelineConfigInfo(PipelineConfigInfo& config_info);
 
 private:
 	/// <summary>

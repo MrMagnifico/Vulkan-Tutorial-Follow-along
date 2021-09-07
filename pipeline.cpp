@@ -71,7 +71,7 @@ void GraphicsPipeline::createGraphicsPipeline(
 	pipeline_info.pMultisampleState = &config_info.multisample_info;
 	pipeline_info.pDepthStencilState = &config_info.depth_stencil_info;
 	pipeline_info.pColorBlendState = &config_info.color_blend_info;
-	pipeline_info.pDynamicState = nullptr; // Optional
+	pipeline_info.pDynamicState = &config_info.dynamic_state_info;
 
 	pipeline_info.layout = config_info.pipeline_layout;
 
@@ -98,28 +98,17 @@ GraphicsPipeline::bind(VkCommandBuffer command_buffer) {
 }
 
 void
-GraphicsPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& config_info, uint32_t width, uint32_t height) {
+GraphicsPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& config_info) {
 	config_info.input_assembly_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	config_info.input_assembly_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // Specifies that each 3 vertices describe a triangle with no reuse, see (https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions)
 	config_info.input_assembly_info.primitiveRestartEnable = VK_FALSE; // Specifies whether or not a MAX value specifices the restart of assembly, see (https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Fixed_functions)
 
-	// Describes region of the frame buffer to render to
-	config_info.viewport.x = 0.0f;
-	config_info.viewport.y = 0.0f;
-	config_info.viewport.width = static_cast<float>(width); // We want to render to the entire extent of the swap chain image
-	config_info.viewport.height = static_cast<float>(height); // Same here
-	config_info.viewport.minDepth = 0.0f;
-	config_info.viewport.maxDepth = 1.0f;
-
-	// Defines region where pixels should actually be rendered (basically clipping)
-	config_info.scissor.offset = { 0, 0 };
-	config_info.scissor.extent = { width, height };
-
+	// Specify that a viewport and scissors exist but do not define them (will be dynamically defined by command buffers)
 	config_info.viewport_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	config_info.viewport_info.viewportCount = 1;
-	config_info.viewport_info.pViewports = &config_info.viewport;
+	config_info.viewport_info.pViewports = nullptr;
 	config_info.viewport_info.scissorCount = 1;
-	config_info.viewport_info.pScissors = &config_info.scissor;
+	config_info.viewport_info.pScissors = nullptr;
 
 	config_info.rasterization_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	config_info.rasterization_info.depthClampEnable = VK_FALSE; // Fragments outside the near and far planes are discarded instead of being clamped to the planes
@@ -151,4 +140,10 @@ GraphicsPipeline::defaultPipelineConfigInfo(PipelineConfigInfo& config_info, uin
 	// config_info.depth_stencil_info.depthCompareOp = VK_COMPARE_OP_LESS;
 	// config_info.depth_stencil_info.depthBoundsTestEnable = VK_FALSE;
 	// config_info.depth_stencil_info.stencilTestEnable = VK_FALSE;
+
+	config_info.dynamic_state_enables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR }; // Viewport and scissor are both dynamic
+	config_info.dynamic_state_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	config_info.dynamic_state_info.pDynamicStates = config_info.dynamic_state_enables.data();
+	config_info.dynamic_state_info.dynamicStateCount = static_cast<uint32_t>(config_info.dynamic_state_enables.size());
+	config_info.dynamic_state_info.flags = 0;
 }
