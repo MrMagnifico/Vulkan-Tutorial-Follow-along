@@ -14,6 +14,7 @@ class CoreApp {
 public:
 	static constexpr int WIDTH = 640;
 	static constexpr int HEIGHT = 480;
+	static constexpr float VERTICAL_FOV_DEG = 59.0;
 
 	CoreApp();
 	~CoreApp();

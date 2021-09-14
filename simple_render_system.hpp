@@ -1,5 +1,6 @@
 #pragma once
 
+#include "camera.hpp"
 #include "device.hpp"
 #include "pipeline.hpp"
 #include "scene_object.hpp"
@@ -25,7 +26,7 @@ public:
 	/// Bind pipeline and add push constant and model data to the given buffer
 	/// </summary>
 	/// <param name="command_buffer">Command buffer to add scene object render data to</param>
-	void renderSceneObjects(VkCommandBuffer command_buffer, std::vector<SceneObject>& scene_objects);
+	void renderSceneObjects(VkCommandBuffer command_buffer, std::vector<SceneObject>& scene_objects, const Camera& camera);
 
 private:
 	LogicalDevice &vulkan_device;

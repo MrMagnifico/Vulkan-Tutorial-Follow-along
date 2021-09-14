@@ -20,6 +20,12 @@ public:
 	VkFormat getSwapChainImageFormat() { return swap_chain_image_format; }
 	VkExtent2D getSwapChainExtent() { return swap_chain_extent; }
 	VkRenderPass getRenderPass() { return render_pass; }
+	
+	/// <summary>
+	/// Compute the aspect ratio of the swap chain extent as width/height
+	/// </summary>
+	/// <returns>Aspect ration of the swap chain extent</returns>
+	float extentAspectRatio() { return static_cast<float>(swap_chain_extent.width) / static_cast<float>(swap_chain_extent.height); }
 
 	/// <summary>
 	/// Acquire the index of the next available image to be rendered to
@@ -27,6 +33,12 @@ public:
 	/// <param name="image_index">Location to store the index of the image</param>
 	/// <returns>Result of image acquisition operation</returns>
 	VkResult acquireNextImage(uint32_t* image_index);
+	/// <summary>
+	/// Submit the given command buffer for execution by a graphics queue and present the data of the processed image to a presentation queue
+	/// </summary>
+	/// <param name="command_buffer">Command buffer with drawing instructions to be submitted to a graphics queue</param>
+	/// <param name="image_index">Index of swapchain image to write final frame result to</param>
+	/// <returns>Result of submission of final result to presentation queue</returns>
 	VkResult submitCommandBuffers(const VkCommandBuffer* command_buffer, uint32_t* image_index);
 
 	bool compareSwapFormats(const SwapChain& swap_chain) const {

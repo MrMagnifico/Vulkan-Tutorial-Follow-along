@@ -16,13 +16,19 @@ CoreApp::~CoreApp() {}
 void
 CoreApp::run() {
 	SimpleRenderSystem simple_render_system(vulkan_device, renderer.getSwapChainRenderPass());
+    Camera camera{};
 
 	while (!window.shouldClose()) {
 		glfwPollEvents();
-		
+
+        // Ensure camera projection matrix is up to date with the swap chain extent aspect ratio
+        float aspect_ratio = renderer.getAspectRatio();
+        // camera.setOrthographicProjection(-aspect_ratio, aspect_ratio, -1, 1, -1, 1); // Math checks out as top and bottom are -1 and 1, so width is equal to 2*aspect_ratio
+        camera.setPerspectiveProjection(glm::radians(VERTICAL_FOV_DEG), aspect_ratio, 0.1f, 10.0f);
+
 		if (VkCommandBuffer command_buffer = renderer.beginFrame()) {
 			renderer.beginSwapChainRenderPass(command_buffer);
-			simple_render_system.renderSceneObjects(command_buffer, scene_objects);
+			simple_render_system.renderSceneObjects(command_buffer, scene_objects, camera);
 			renderer.endSwapChainRenderPass(command_buffer);
 			renderer.endFrame();
 		}
@@ -102,7 +108,7 @@ CoreApp::loadSceneObjects() {
 
 	// Generate object(s)
     TransformComponent transformations{};
-    transformations.translation = { 0.0f, 0.0f, 0.0f };
+    transformations.translation = { 0.0f, 0.0f, 2.0f };
     transformations.scale = { 0.5f, 0.5f, 0.5f };
     transformations.rotation = { 0.5f, 0.5f, 0.0f };
 	SceneObject cube = SceneObject(cube_model_ptr, transformations);

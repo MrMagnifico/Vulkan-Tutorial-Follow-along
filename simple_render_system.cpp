@@ -29,12 +29,12 @@ SimpleRenderSystem::~SimpleRenderSystem() {
 }
 
 void
-SimpleRenderSystem::renderSceneObjects(VkCommandBuffer command_buffer, std::vector<SceneObject>& scene_objects) {
+SimpleRenderSystem::renderSceneObjects(VkCommandBuffer command_buffer, std::vector<SceneObject>& scene_objects, const Camera& camera) {
 	pipeline->bind(command_buffer);
 
 	for (SceneObject object : scene_objects) {
 		PushConstantData push_constant_data{};
-		push_constant_data.transformation = object.transformation.affineMatrix();
+		push_constant_data.transformation = camera.getProjectionMatrix() * object.transformation.affineMatrix(); //TODO: move this multiplication to be done on the GPU in a UBO
 		vkCmdPushConstants(
 			command_buffer,
 			pipeline_layout,
