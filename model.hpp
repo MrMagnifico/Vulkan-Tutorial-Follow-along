@@ -14,11 +14,11 @@ struct Vertex {
     /// <summary>
     /// Position of the vertex
     /// </summary>
-    glm::vec2 pos;
+    glm::vec3 pos{};
     /// <summary>
     /// Color of the vertex
     /// </summary>
-    glm::vec3 color;
+    glm::vec3 color{};
 
     /// <summary>
     /// Creates a description of how to interpret vertex data stored in memory as will be used by the vertex shader
